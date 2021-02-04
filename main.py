@@ -24,7 +24,8 @@ class WordInput(jp.InputChangeOnly):
         self.placeholder = text
         await self.wp.update()
         await asyncio.sleep(3)
-        self.placeholder = ''
+        if not self.value:
+            self.placeholder = ''
 
 
 class WatchCard(jp.Div):
@@ -68,7 +69,7 @@ class Card(jp.Div):
         super().__init__(**kwargs)
 
     def get_word(self, words):
-        exclude = ['in', 'at', 'that', 'the', 'it', 'music', 'then', 'will', 'have', 'been']
+        exclude = ['in', 'at', 'that', 'the', 'it', 'music', 'then', 'will', 'have', 'been', 'this', 'they']
         count = 0
         while True:
             count += 1
