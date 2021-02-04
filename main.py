@@ -2,6 +2,7 @@ import jp
 import uvicorn
 import re
 import random
+import asyncio
 from crawler import SubTitleCrawler
 
 
@@ -15,7 +16,20 @@ class WordInput(jp.InputChangeOnly):
     def __init__(self, length=1, **kwargs):
         kwargs['class_'] = 'outline-none bg-gray-300 text-green-500 text-5xl'
         kwargs['style'] = f'width: {length * 2}rem;'
+        self.placeholder = kwargs.get('placeholder')
+        self.wp = None
         super().__init__(**kwargs)
+
+    async def wait_to_clear(self):
+        await asyncio.sleep(3)
+        self.placeholder = ''
+        await self.wp.update()
+        print('done')
+
+    async def temp_placeholder(self, text):
+        self.placeholder = text
+        print('get place holder')
+        jp.run_task(self.wait_to_clear())
 
 
 class WatchCard(jp.Div):
@@ -26,6 +40,7 @@ class WatchCard(jp.Div):
         kwargs['style'] = 'min-height: 20rem;'
         super().__init__(**kwargs)
         input_ = WordInput(length=10)
+        input_.wp = self.wp
         button = jp.Button(
             class_='text-5xl px-6 m-2 text-lg text-indigo-100 transition-colors duration-150 bg-indigo-700 rounded-lg focus:shadow-outline hover:bg-indigo-80',
             text='送出', click=self.click)
@@ -34,15 +49,17 @@ class WatchCard(jp.Div):
         self.input = input_
 
     async def click(self, _):
-        if self.input.value:
-            self.wp.watch = self.input.value
-            crawler = SubTitleCrawler(self.input.value)
-            crawler.init()
-            crawler.get_subtitle()
-            self.citem.delete()
-            card = Card(wp=self.wp, crawler=crawler)
-            await card.build()
-            self.citem.add_component(card)
+        await self.input.temp_placeholder('demo')
+
+    # async def click(self, _):
+    #     if self.input.value:
+    #         self.wp.watch = self.input.value
+    #         crawler = SubTitleCrawler(self.input.value)
+    #         crawler.init()
+    #         self.citem.delete()
+    #         card = Card(wp=self.wp, crawler=crawler)
+    #         await card.build()
+    #         self.citem.add_component(card)
 
 
 class Card(jp.Div):
@@ -67,11 +84,13 @@ class Card(jp.Div):
                 return word
 
     async def change(self, msg):
-        if msg.value == self.answer:
+        print('value:', msg.value)
+        if msg.value.lower() == self.answer.lower():
             await self.build()
-        else:
+        elif msg.value:
             msg.target.value = ''
-        print('enter!!')
+            await msg.target.temp_placeholder(self.answer)
+            await self.make_sound()
 
     async def make_sound(self):
         eval_text = f"""
@@ -80,8 +99,6 @@ class Card(jp.Div):
             window.speechSynthesis.speak(utterance)
             """
         await self.wp.run_javascript(eval_text)
-        print('after run')
-        print(eval_text)
 
     async def build(self):
         self.delete_components()
