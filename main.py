@@ -20,16 +20,11 @@ class WordInput(jp.InputChangeOnly):
         self.wp = None
         super().__init__(**kwargs)
 
-    async def wait_to_clear(self):
-        await asyncio.sleep(3)
-        self.placeholder = ''
-        await self.wp.update()
-        print('done')
-
     async def temp_placeholder(self, text):
         self.placeholder = text
-        print('get place holder')
-        jp.run_task(self.wait_to_clear())
+        await self.wp.update()
+        await asyncio.sleep(3)
+        self.placeholder = ''
 
 
 class WatchCard(jp.Div):
@@ -49,17 +44,14 @@ class WatchCard(jp.Div):
         self.input = input_
 
     async def click(self, _):
-        await self.input.temp_placeholder('demo')
-
-    # async def click(self, _):
-    #     if self.input.value:
-    #         self.wp.watch = self.input.value
-    #         crawler = SubTitleCrawler(self.input.value)
-    #         crawler.init()
-    #         self.citem.delete()
-    #         card = Card(wp=self.wp, crawler=crawler)
-    #         await card.build()
-    #         self.citem.add_component(card)
+        if self.input.value:
+            self.wp.watch = self.input.value
+            crawler = SubTitleCrawler(self.input.value)
+            crawler.init()
+            self.citem.delete()
+            card = Card(wp=self.wp, crawler=crawler)
+            await card.build()
+            self.citem.add_component(card)
 
 
 class Card(jp.Div):
@@ -84,7 +76,6 @@ class Card(jp.Div):
                 return word
 
     async def change(self, msg):
-        print('value:', msg.value)
         if msg.value.lower() == self.answer.lower():
             await self.build()
         elif msg.value:
