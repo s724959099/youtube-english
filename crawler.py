@@ -46,7 +46,7 @@ class SubTitleCrawler:
         zh_list = []
         en_subtitles = self.en_subtitles[:]
         zh_subtitles = self.zh_subtitles[:]
-        while len(en_subtitles) or len(zh_subtitles):
+        while len(en_subtitles) and len(zh_subtitles):
             en_dict = en_subtitles.pop(0)
             zh_dict = zh_subtitles.pop(0)
             while len(en_subtitles) and len(zh_subtitles):

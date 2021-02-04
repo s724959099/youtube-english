@@ -68,28 +68,32 @@ class Card(jp.Div):
         super().__init__(**kwargs)
 
     def get_word(self, words):
+        exclude = ['in', 'at', 'that', 'the', 'it', 'music', 'then', 'will', 'have', 'been']
         count = 0
         while True:
             count += 1
-            word = random.choice(words)
-            if len(word) >= 2 or count > 3:
-                return word
+            ret = word = random.choice(words)
+            word = word.lower()
+            if (len(word) >= 4 and word not in exclude) or count > len(words):
+                return ret
 
     async def change(self, msg):
         if msg.value.lower() == self.answer.lower():
             await self.build()
         elif msg.value:
             msg.target.value = ''
-            await msg.target.temp_placeholder(self.answer)
             await self.make_sound()
+            await msg.target.temp_placeholder(self.answer)
 
     async def make_sound(self):
         eval_text = f"""
-            let utterance = new window.SpeechSynthesisUtterance('{self.en}');
+            let utterance = new window.SpeechSynthesisUtterance("{self.en}");
             utterance.lang = 'en-US';
             window.speechSynthesis.speak(utterance)
+            console.log("{self.en}")
             """
         await self.wp.run_javascript(eval_text)
+        print('make sound')
 
     async def build(self):
         self.delete_components()
@@ -106,7 +110,7 @@ class Card(jp.Div):
         suffix_s = en[ed_index:]
         self.add_component(Word(text=prefix_s))
         self.add_component(
-            WordInput(length=len(word), change=self.change)
+            WordInput(length=len(word), change=self.change, wp=self.wp)
         )
         self.add_component(Word(text=suffix_s))
         self.add_component(jp.Div(class_='bg-gray-600 h-px my-6'))
