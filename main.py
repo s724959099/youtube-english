@@ -2,7 +2,7 @@ import jp
 import uvicorn
 import re
 import random
-from crawler import SubTitleCralwer
+from crawler import SubTitleCrawler
 
 
 class Word(jp.Span):
@@ -33,20 +33,20 @@ class WatchCard(jp.Div):
         self.add_component(button)
         self.input = input_
 
-    def click(self, _):
+    async def click(self, _):
         if self.input.value:
             self.wp.watch = self.input.value
-            cralwer = SubTitleCralwer(self.input.value)
-            cralwer.init()
-            cralwer.get_subtitle()
+            crawler = SubTitleCrawler(self.input.value)
+            crawler.init()
+            crawler.get_subtitle()
             self.citem.delete()
-            card = Card(wp=self.wp, crawler=cralwer)
-            card.build()
+            card = Card(wp=self.wp, crawler=crawler)
+            await card.build()
             self.citem.add_component(card)
 
 
 class Card(jp.Div):
-    def __init__(self, wp, crawler: SubTitleCralwer, **kwargs):
+    def __init__(self, wp, crawler: SubTitleCrawler, **kwargs):
         self.wp = wp
         self.answer = None
         self.en = None
@@ -114,24 +114,17 @@ class Card(jp.Div):
 @jp.SetRoute('/')
 async def demo():
     wp = jp.WebPage()
-    await wp.run_javascript("""
-    let utterance = new window.SpeechSynthesisUtterance('[Music]');
-    utterance.lang = 'en-US';
-    window.speechSynthesis.speak(utterance);
-    console.log('yooo');
-    
-    """)
     c = jp.parse_html("""
     <div class="bg-red-200 h-screen">
         <div class="flex flex-col items-center" name="item">
         </div>
       </div>
     """)
-    # citem = c.name_dict['item']
-    # watchcard = WatchCard(wp=wp, citem=citem)
-    # citem.add_component(watchcard)
-    # # card = Card(sentence='Tom works like a horse.')
-    # # citem.add_component(card)
+    citem = c.name_dict['item']
+    watchcard = WatchCard(wp=wp, citem=citem)
+    citem.add_component(watchcard)
+    # card = Card(sentence='Tom works like a horse.')
+    # citem.add_component(card)
     wp.add_component(c)
 
     return wp

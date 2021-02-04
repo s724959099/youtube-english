@@ -1,8 +1,9 @@
 import requests
 import re
+from addict import Dict
 
 
-class SubTitleCralwer:
+class SubTitleCrawler:
 
     def __init__(self, v: str):
         self.en_url = None
@@ -32,3 +33,11 @@ class SubTitleCralwer:
 
         r = requests.get(self.zh_url)
         self.zh_subtitles = self.get_list(r.text)
+
+
+if __name__ == '__main__':
+    v = 'wCGsLqHOT2I'
+    crawler = SubTitleCrawler(v)
+    crawler.init()
+    crawler.get_subtitle()
+    print()
