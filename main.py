@@ -22,10 +22,6 @@ class WordInput(jp.InputChangeOnly):
 
     async def temp_placeholder(self, text):
         self.placeholder = text
-        await self.wp.update()
-        await asyncio.sleep(3)
-        if not self.value:
-            self.placeholder = ''
 
 
 class WatchCard(jp.Div):
@@ -72,7 +68,8 @@ class Card(jp.Div):
     def get_word(self, words):
         exclude = ['in', 'at', 'that', 'the', 'it', 'music', 'then', 'will',
                    'have', 'been', 'this', 'they', 'your', 'what', 'there',
-                   'would', 'could']
+                   'were', 'here',
+                   'would', 'could', 'while', 'when', 'where']
         count = 0
         while True:
             count += 1
@@ -104,7 +101,6 @@ class Card(jp.Div):
             console.log("{self.en}")
             """
         await self.wp.run_javascript(eval_text)
-        print('make sound')
 
     async def build(self):
         self.delete_components()
