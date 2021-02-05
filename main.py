@@ -64,18 +64,28 @@ class Card(jp.Div):
         self.crawler = crawler
         self.total_count = len(self.crawler.en_subtitles)
         self.count_index = 0
+        self.answer_list = []
         kwargs['class_'] = 'w-2/3 bg-white mt-20  rounded-lg shadow p-12'
         kwargs['style'] = 'min-height: 20rem;'
         super().__init__(**kwargs)
 
     def get_word(self, words):
-        exclude = ['in', 'at', 'that', 'the', 'it', 'music', 'then', 'will', 'have', 'been', 'this', 'they']
+        exclude = ['in', 'at', 'that', 'the', 'it', 'music', 'then', 'will',
+                   'have', 'been', 'this', 'they', 'your', 'what', 'there',
+                   'would', 'could']
         count = 0
         while True:
             count += 1
             ret = word = random.choice(words)
             word = word.lower()
-            if (len(word) >= 4 and word not in exclude) or count > len(words):
+            if count > len(words):
+                return ret
+            after_word_index = self.en.index(ret) + len(ret)
+            if after_word_index < len(self.en) and self.en[after_word_index] == '\'':
+                continue
+
+            if len(word) >= 4 and word not in exclude and word not in self.answer_list:
+                self.answer_list.append(word)
                 return ret
 
     async def change(self, msg):
