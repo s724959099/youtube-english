@@ -1,8 +1,6 @@
 import jp
 import uvicorn
-import re
-import random
-from crawler import SubTitleCrawler
+from translate import Translate
 
 
 class Word(jp.Span):
@@ -12,15 +10,13 @@ class Word(jp.Span):
         self.is_green = True
         super().__init__(**kwargs)
 
-    def on_click(self, _):
+    async def on_click(self, _):
         if self.is_green:
             self.set_class('text-gray-500')
         else:
             self.set_class('text-green-500')
 
         self.is_green = not self.is_green
-        card = self.page.card
-        print()
 
 
 class Watchcard(jp.Div):
@@ -45,11 +41,14 @@ class Watchcard(jp.Div):
 
 class Card(jp.Div):
     def __init__(self, **kwargs):
+        self.span_list = []
         kwargs['class_'] = 'w-2/3 bg-white mt-20  rounded-lg shadow p-12 flex flex-wrap'
         kwargs['style'] = 'min-height: 20rem;'
         super().__init__(**kwargs)
         self.en_area = None
         self.tw_area = None
+
+        self.ts = Translate('zh-TW', 'en')
 
     async def make_sound(self, target):
         eval_text = f"""
@@ -60,16 +59,43 @@ class Card(jp.Div):
             """
         await self.page.run_javascript(eval_text)
 
+    async def change_area_text(self, english):
+        self.en_area.value = english
+        self.tw_area.text = self.ts.translate(english)
+
+    async def click(self, _):
+        await self.rebuild()
+
     async def build(self):
         self.delete_components()
+        self.span_list = []
         for word in self.page.original_english.split():
-            self.add_component(Word(text=word))
+            el = Word(text=word)
+            self.add_component(el)
+            self.span_list.append(el)
+
+        self.add_component(jp.Button(text='更新', click=self.click))
         self.add_component(jp.Div(class_='bg-gray-600 h-px my-6 w-full'))
-        self.en_area = jp.Div(text=self.page.original_english)
+        self.en_area = jp.Textarea(class_='w-full')
+        self.add_component(jp.Button(text='更新', click=self.click_to_build))
         self.add_component(self.en_area)
         self.add_component(jp.Div(class_='bg-gray-600 h-px my-6 w-full'))
-        self.tw_area = jp.Div(text='我是中文翻譯')
+        self.tw_area = jp.Div()
         self.add_component(self.tw_area)
+
+        await self.change_area_text(self.page.original_english)
+
+    async def click_to_build(self, _):
+        value = self.en_area.value
+        self.page.original_english = value
+        await self.build()
+
+    async def rebuild(self):
+        words = []
+        for el in self.span_list:
+            if el.is_green:
+                words.append(el.text)
+        await self.change_area_text(" ".join(words))
 
 
 @jp.SetRoute('/')
@@ -88,4 +114,4 @@ async def demo():
 app = jp.app
 
 if __name__ == '__main__':
-    uvicorn.run('d10:app', debug=True)
+    uvicorn.run('articles:app', debug=True)
