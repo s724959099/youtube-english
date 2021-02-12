@@ -142,8 +142,6 @@ async def demo():
     citem = c.name_dict['item']
     watchcard = WatchCard(wp=wp, citem=citem)
     citem.add_component(watchcard)
-    # card = Card(sentence='Tom works like a horse.')
-    # citem.add_component(card)
     wp.add_component(c)
 
     return wp

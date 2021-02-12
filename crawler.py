@@ -22,8 +22,9 @@ class SubTitleCrawler:
         r = requests.get(url)
         content = r.text
         api = re.findall(r'"(https://www.youtube.com/api/timedtext.+?)"', content)[-1]
-        self.en_url = re.sub(r'\\u0026', '&', api)
-        self.zh_url = self.en_url + '&tlang=zh-Hant'
+        base = re.sub(r'\\u0026', '&', api)
+        self.en_url = base + '&tlang=en'
+        self.zh_url = base + '&tlang=zh-Hant'
 
     def get_list(self, content):
         content = re.sub(r'&amp;#39;', '\'', content)
