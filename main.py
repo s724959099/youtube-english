@@ -17,22 +17,19 @@ class WordInput(jp.InputChangeOnly):
         kwargs['class_'] = 'outline-none bg-gray-300 text-green-500 text-5xl'
         kwargs['style'] = f'width: {length * 2}rem;'
         self.placeholder = kwargs.get('placeholder')
-        self.wp = None
         super().__init__(**kwargs)
 
     async def temp_placeholder(self, text):
         self.placeholder = text
 
 
-class WatchCard(jp.Div):
+class Watchcard(jp.Div):
     def __init__(self, **kwargs):
-        self.wp = None
         self.citem = None
         kwargs['class_'] = 'w-2/3 bg-white mt-20  rounded-lg shadow p-12'
         kwargs['style'] = 'min-height: 20rem;'
         super().__init__(**kwargs)
         input_ = WordInput(length=10)
-        input_.wp = self.wp
         button = jp.Button(
             class_='text-5xl px-6 m-2 text-lg text-indigo-100 transition-colors duration-150 bg-indigo-700 rounded-lg focus:shadow-outline hover:bg-indigo-80',
             text='送出', click=self.click)
@@ -42,18 +39,18 @@ class WatchCard(jp.Div):
 
     async def click(self, _):
         if self.input.value:
-            self.wp.watch = self.input.value
+            self.page.watch = self.input.value
             crawler = SubTitleCrawler(self.input.value)
             crawler.init()
-            self.citem.delete()
-            card = Card(wp=self.wp, crawler=crawler)
+            item = self.page.name_dict['item']
+            item.delete()
+            card = Card(crawler=crawler)
+            item.add_component(card)
             await card.build()
-            self.citem.add_component(card)
 
 
 class Card(jp.Div):
-    def __init__(self, wp, crawler: SubTitleCrawler, **kwargs):
-        self.wp = wp
+    def __init__(self, crawler: SubTitleCrawler, **kwargs):
         self.answer = None
         self.en = None
         self.tw = None
@@ -100,7 +97,7 @@ class Card(jp.Div):
             window.speechSynthesis.speak(utterance)
             console.log("{self.en}")
             """
-        await self.wp.run_javascript(eval_text)
+        await self.page.run_javascript(eval_text)
 
     async def build(self):
         self.delete_components()
@@ -117,7 +114,7 @@ class Card(jp.Div):
         suffix_s = en[ed_index:]
         self.add_component(Word(text=prefix_s))
         self.add_component(
-            WordInput(length=len(word), change=self.change, wp=self.wp)
+            WordInput(length=len(word), change=self.change)
         )
         self.add_component(Word(text=suffix_s))
         self.add_component(jp.Div(class_='bg-gray-600 h-px my-6'))
@@ -132,17 +129,13 @@ class Card(jp.Div):
 
 @jp.SetRoute('/')
 async def demo():
-    wp = jp.WebPage()
-    c = jp.parse_html("""
+    wp = jp.justpy_parser_to_wp("""
     <div class="bg-red-200 h-screen">
         <div class="flex flex-col items-center" name="item">
+        <WatchCard></WatchCard>
         </div>
       </div>
     """)
-    citem = c.name_dict['item']
-    watchcard = WatchCard(wp=wp, citem=citem)
-    citem.add_component(watchcard)
-    wp.add_component(c)
 
     return wp
 
