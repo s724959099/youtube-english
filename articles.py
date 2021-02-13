@@ -1,16 +1,18 @@
 import jp
 import uvicorn
 from translate import Translate
+import re
 
 
 class Word(jp.Span):
     def __init__(self, **kwargs):
         kwargs['class_'] = 'text-green-500 text-xl pr-2 cursor-pointer'
-        kwargs['on_click'] = self.on_click
+        kwargs['on_mouseover'] = self.on_mouse_enter
+        kwargs['on_click'] = self.on_mouse_enter
         self.is_green = True
         super().__init__(**kwargs)
 
-    async def on_click(self, _):
+    async def on_mouse_enter(self, _):
         if self.is_green:
             self.set_class('text-gray-500')
         else:
@@ -36,6 +38,7 @@ class Watchcard(jp.Div):
         card = Card()
         self.page.card = card
         item.add_component(card)
+        card.init_sentence()
         await card.build()
 
 
@@ -47,6 +50,7 @@ class Card(jp.Div):
         super().__init__(**kwargs)
         self.en_area = None
         self.tw_area = None
+        self.sentence_list = []
 
         self.ts = Translate('zh-TW', 'en')
 
@@ -62,6 +66,7 @@ class Card(jp.Div):
     async def change_area_text(self, english):
         self.en_area.value = english
         self.tw_area.text = self.ts.translate(english)
+        await self.make_sound(english)
 
     async def click(self, _):
         await self.rebuild()
@@ -69,7 +74,8 @@ class Card(jp.Div):
     async def build(self):
         self.delete_components()
         self.span_list = []
-        for word in self.page.original_english.split():
+        sentence = self.sentence_list.pop(0)
+        for word in sentence.split():
             el = Word(text=word)
             self.add_component(el)
             self.span_list.append(el)
@@ -83,11 +89,9 @@ class Card(jp.Div):
         self.tw_area = jp.Div()
         self.add_component(self.tw_area)
 
-        await self.change_area_text(self.page.original_english)
+        await self.change_area_text(sentence)
 
     async def click_to_build(self, _):
-        value = self.en_area.value
-        self.page.original_english = value
         await self.build()
 
     async def rebuild(self):
@@ -96,6 +100,11 @@ class Card(jp.Div):
             if el.is_green:
                 words.append(el.text)
         await self.change_area_text(" ".join(words))
+
+    def init_sentence(self):
+        for sentence in re.split(r'[\.!?]', self.page.original_english):
+            if sentence:
+                self.sentence_list.append(sentence)
 
 
 @jp.SetRoute('/')
